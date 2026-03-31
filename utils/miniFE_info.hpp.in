@@ -1,0 +1,13 @@
+#ifndef miniFE_info_hpp
+#define miniFE_info_hpp
+
+#define MINIFE_HOSTNAME "@MINIFE_HOSTNAME@"
+#define MINIFE_KERNEL_NAME "@MINIFE_KERNEL_NAME@"
+#define MINIFE_KERNEL_RELEASE "@MINIFE_KERNEL_RELEASE@"
+#define MINIFE_PROCESSOR "@MINIFE_PROCESSOR@"
+
+#define MINIFE_CXX "@MINIFE_CXX@"
+#define MINIFE_CXX_VERSION "unknown"
+#define MINIFE_CXXFLAGS "@MINIFE_CXXFLAGS@"
+
+#endif
