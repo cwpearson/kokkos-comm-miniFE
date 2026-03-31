@@ -72,6 +72,7 @@ Key CMake options:
 - [x] Bring Kokkos_Vector.hpp in-tree
 - [x] Rework deprecated DualView.d_view/h_view
 - [x] View::Rank -> rank
+- [x] Fix dual-view sync behavior for device code
 
 ## License
 

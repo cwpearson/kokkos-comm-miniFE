@@ -55,10 +55,12 @@ struct err_info {
 template<typename VectorType>
 int
 verify_solution(const simple_mesh_description<typename VectorType::GlobalOrdinalType>& mesh,
-                const VectorType& x, double tolerance, bool verify_whole_domain = false)
+                VectorType& x, double tolerance, bool verify_whole_domain = false)
 {
   typedef typename VectorType::GlobalOrdinalType GlobalOrdinal;
   typedef typename VectorType::ScalarType Scalar;
+
+  x.coefs.template sync<typename decltype(x.coefs)::t_host::device_type>();
 
   int global_nodes_x = mesh.global_box[0][1]+1;
   int global_nodes_y = mesh.global_box[1][1]+1;

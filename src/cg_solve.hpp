@@ -71,7 +71,7 @@ template<typename OperatorType,
          typename VectorType>
 void
 cg_solve(OperatorType& A,
-         const VectorType& b,
+         VectorType& b,
          VectorType& x,
          typename OperatorType::LocalOrdinalType max_iter,
          typename TypeTraits<typename OperatorType::ScalarType>::magnitude_type& tolerance,
@@ -86,8 +86,8 @@ cg_solve(OperatorType& A,
   if(A.mat.numRows() ==0)
 	  A.init_kokkos_matrix();
   A.host_to_device(); A.on_device();
-  x.coefs.host_to_device(); x.coefs.on_device();
-  b.coefs.host_to_device(); //b.coefs.on_device();
+  x.coefs.template sync<typename decltype(x.coefs)::t_dev::device_type>();
+  b.coefs.template sync<typename decltype(b.coefs)::t_dev::device_type>();
 
   timer_type t0 = 0, tWAXPY = 0, tDOT = 0, tMATVEC = 0, tMATVECDOT = 0;
 
@@ -122,9 +122,9 @@ cg_solve(OperatorType& A,
   ScalarType zero = 0.0;
 
   // Copy data from CPU (on Host assembly) to GPU
-  Ap.coefs.host_to_device(); A.on_device();
-  r.coefs.host_to_device(); r.coefs.on_device();
-  p.coefs.host_to_device(); p.coefs.on_device();
+  Ap.coefs.template sync<typename decltype(Ap.coefs)::t_dev::device_type>();
+  r.coefs.template sync<typename decltype(r.coefs)::t_dev::device_type>();
+  p.coefs.template sync<typename decltype(p.coefs)::t_dev::device_type>();
 
   timer_type total_time = mytimer();
   TICK(); waxpby(one, x, zero, x, p); TOCK(tWAXPY);
@@ -209,6 +209,7 @@ cg_solve(OperatorType& A,
     num_iters = k;
   }
 
+  x.coefs.template modify<typename decltype(x.coefs)::t_dev::device_type>();
   my_cg_times[WAXPY] = tWAXPY;
   my_cg_times[DOT] = tDOT;
   my_cg_times[MATVEC] = tMATVEC;
