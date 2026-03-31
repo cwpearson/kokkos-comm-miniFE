@@ -9,15 +9,7 @@ namespace Kokkos {
 
 template<typename Scalar, class device>
 struct MultiVectorDynamic{
-#ifdef KOKKOS_USE_CUSPARSE
-  typedef typename Kokkos::LayoutLeft layout;
-#else
-#ifdef KOKKOS_USE_MKL
-  typedef typename Kokkos::LayoutRight layout;
-#else
   typedef typename device::array_layout layout;
-#endif
-#endif
   typedef typename Kokkos::View<Scalar**  , layout, device>  type ;
   typedef typename Kokkos::View<const Scalar**  , layout, device>  const_type ;
   typedef typename Kokkos::View<const Scalar**  , layout, device, Kokkos::MemoryRandomAccess>  random_read_type ;

@@ -57,16 +57,6 @@
 #include <Kokkos_Vector.hpp>
 #include <KokkosSparse_StaticCrsGraph.hpp>
 
-#ifdef KOKKOS_USE_CUSPARSE
-#  include <cusparse_v2.h>
-#  include <Kokkos_CrsMatrix_CuSparse.hpp>
-#endif // KOKKOS_USE_CUSPARSE
-
-#ifdef KOKKOS_USE_MKL
-#  include <mkl.h>
-#  include <mkl_spblas.h>
-#  include <Kokkos_CrsMatrix_MKL.hpp>
-#endif // KOKKOS_USE_MKL
 
 namespace Kokkos {
 
@@ -308,10 +298,6 @@ public:
   //! Nonconst version of the type of the entries in the sparse matrix.
   typedef typename values_type::non_const_value_type  non_const_value_type;
 
-#ifdef KOKKOS_USE_CUSPARSE
-  cusparseHandle_t cusparse_handle;
-  cusparseMatDescr_t cusparse_descr;
-#endif // KOKKOS_USE_CUSPARSE
   StaticCrsGraphType graph;
   values_type values;
 
@@ -363,20 +349,6 @@ public:
              bool pad = false)
   {
     import (label, nrows, ncols, annz, val, rows, cols);
-
-    // FIXME (mfh 09 Aug 2013) Specialize this on the Device type.
-    // Only use cuSPARSE for the Cuda Device.
-#ifdef KOKKOS_USE_CUSPARSE
-    // FIXME (mfh 09 Aug 2013) This is actually static initialization
-    // of the library; you should do it once for the whole program,
-    // not once per matrix.  We need to protect this somehow.
-    cusparseCreate (&cusparse_handle);
-
-    // This is a per-matrix attribute.  It encapsulates things like
-    // whether the matrix is lower or upper triangular, etc.  Ditto
-    // for other TPLs like MKL.
-    cusparseCreateMatDescr (&cusparse_descr);
-#endif // KOKKOS_USE_CUSPARSE
   }
 
   /// \brief Constructor that accepts a row map, column indices, and values.
@@ -406,10 +378,6 @@ public:
     graph.row_map = rows;
     graph.entries = cols;
     values = vals;
-#ifdef KOKKOS_USE_CUSPARSE
-    cusparseCreate(&cusparse_handle);
-    cusparseCreateMatDescr(&cusparse_descr);
-#endif // KOKKOS_USE_CUSPARSE
   }
 
   /// \brief Constructor that accepts a a static graph, and values.
@@ -435,10 +403,6 @@ public:
     values(vals),
     graph(graph_)
   {
-#ifdef KOKKOS_USE_CUSPARSE
-    cusparseCreate(&cusparse_handle);
-    cusparseCreateMatDescr(&cusparse_descr);
-#endif // KOKKOS_USE_CUSPARSE
   }
   
   void
@@ -1601,16 +1565,6 @@ struct MV_MultiplyFunctor {
     // all the suitable TPLs at run time.  This would be a run-time test
     // that compares the Scalar and Device types to those accepted by
     // the TPL(s).
-#ifdef KOKKOS_USE_CUSPARSE
-    if (MV_Multiply_Try_CuSparse (0.0, y, 1.0, A, x)) {
-      return;
-    }
-#endif // KOKKOS_USE_CUSPARSE
-#ifdef KOKKOS_USE_MKL
-    if (MV_Multiply_Try_MKL (0.0, y, 1.0, A, x)) {
-      return;
-    }
-#endif // KOKKOS_USE_MKL
     typedef Kokkos::View<typename DomainVector::value_type*, typename DomainVector::device_type> aVector;
     aVector a;
 
@@ -1624,16 +1578,6 @@ struct MV_MultiplyFunctor {
 	       const CrsMatrix& A,
 	       const DomainVector& x)
   {
-#ifdef KOKKOS_USE_CUSPARSE
-    if (MV_Multiply_Try_CuSparse (0.0, y, s_a, A, x)) {
-      return;
-    }
-#endif // KOKKOS_USE_CUSPARSE
-#ifdef KOKKOS_USE_MKL
-    if (MV_Multiply_Try_MKL (0.0, y, s_a, A, x)) {
-      return;
-    }
-#endif // KOKKOS_USE_MKL
     typedef Kokkos::View<typename RangeVector::value_type*, typename RangeVector::device_type> aVector;
     aVector a;
     const int numVecs = x.extent(1);
@@ -1659,16 +1603,6 @@ struct MV_MultiplyFunctor {
 	       const CrsMatrix& A,
 	       const DomainVector& x)
   {
-#ifdef KOKKOS_USE_CUSPARSE
-    if (MV_Multiply_Try_CuSparse (s_b, y, s_a, A, x)) {
-      return;
-    }
-#endif // KOKKOSE_USE_CUSPARSE
-#ifdef KOKKOS_USE_MKL
-    if (MV_Multiply_Try_MKL (s_b, y, s_a, A, x)) {
-      return;
-    }
-#endif // KOKKOS_USE_MKL
     typedef Kokkos::View<typename RangeVector::value_type*, typename RangeVector::device_type> aVector;
     aVector a;
     aVector b;
