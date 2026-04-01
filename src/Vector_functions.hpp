@@ -34,7 +34,7 @@
 #include <fstream>
 
 #ifdef HAVE_MPI
-#include <mpi.h>
+#include <KokkosComm/KokkosComm.hpp>
 #endif
 
 #ifdef MINIFE_HAVE_TBB
@@ -78,7 +78,7 @@ void write_vector(const std::string& filename,
       }
     }
 #ifdef HAVE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
+    KokkosComm::mpi::barrier(MPI_COMM_WORLD);
 #endif
   }
 }
@@ -180,8 +180,9 @@ typename TypeTraits<typename Vector::ScalarType>::magnitude_type
 
 #ifdef HAVE_MPI
   magnitude local_dot = result, global_dot = 0;
-  MPI_Datatype mpi_dtype = TypeTraits<magnitude>::mpi_type();  
-  MPI_Allreduce(&local_dot, &global_dot, 1, mpi_dtype, MPI_SUM, MPI_COMM_WORLD);
+  Kokkos::View<magnitude*, Kokkos::HostSpace> sv(&local_dot, 1);
+  Kokkos::View<magnitude*, Kokkos::HostSpace> rv(&global_dot, 1);
+  KokkosComm::mpi::allreduce(sv, rv, MPI_SUM, MPI_COMM_WORLD);
   return global_dot;
 #else
   return result;

@@ -31,7 +31,7 @@
 #include <cmath>
 
 #ifdef HAVE_MPI
-#include <mpi.h>
+#include <KokkosComm/KokkosComm.hpp>
 #endif
 
 #include <box_utils.hpp>
@@ -220,8 +220,12 @@ add_imbalance(const Box& global_box,
                         local_box[Y][0], local_box[Y][1],
                         local_box[Z][0], local_box[Z][1]};
 #ifdef HAVE_MPI
-    MPI_Bcast(&grow_info[0], 8, MPI_INT, max_proc, MPI_COMM_WORLD);
-    MPI_Bcast(&shrink_info[0], 8, MPI_INT, min_proc, MPI_COMM_WORLD);
+    {
+      Kokkos::View<int*, Kokkos::HostSpace> gv(grow_info, 8);
+      KokkosComm::mpi::broadcast(gv, max_proc, MPI_COMM_WORLD);
+      Kokkos::View<int*, Kokkos::HostSpace> sv(shrink_info, 8);
+      KokkosComm::mpi::broadcast(sv, min_proc, MPI_COMM_WORLD);
+    }
 #endif
 
     int grow_axis = grow_info[0];
@@ -260,7 +264,11 @@ add_imbalance(const Box& global_box,
 #ifdef HAVE_MPI
     int statusints[2] = { grow_status ? 0 : 1, shrink_status ? 0 : 1 };
     int globalstatus[2] = { 0, 0 };
-    MPI_Allreduce(&statusints, &globalstatus, 2, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    {
+      Kokkos::View<int*, Kokkos::HostSpace> sv(statusints, 2);
+      Kokkos::View<int*, Kokkos::HostSpace> rv(globalstatus, 2);
+      KokkosComm::mpi::allreduce(sv, rv, MPI_SUM, MPI_COMM_WORLD);
+    }
     grow_status = globalstatus[0]>0 ? false : true;
     shrink_status = globalstatus[1]>0 ? false : true;
 #endif

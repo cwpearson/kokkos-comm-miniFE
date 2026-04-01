@@ -36,7 +36,7 @@
 #include <outstream.hpp>
 
 #ifdef HAVE_MPI
-#include <mpi.h>
+#include <KokkosComm/KokkosComm.hpp>
 #endif
 
 #include <Box.hpp>
@@ -111,8 +111,11 @@ int main(int argc, char** argv) {
   MINIFE_GLOBAL_ORDINAL min_ids = num_my_ids;
 
 #ifdef HAVE_MPI
-  MPI_Datatype mpi_dtype = miniFE::TypeTraits<MINIFE_GLOBAL_ORDINAL>::mpi_type();
-  MPI_Allreduce(&num_my_ids, &min_ids, 1, mpi_dtype, MPI_MIN, MPI_COMM_WORLD);
+  {
+    Kokkos::View<MINIFE_GLOBAL_ORDINAL*, Kokkos::HostSpace> sv(&num_my_ids, 1);
+    Kokkos::View<MINIFE_GLOBAL_ORDINAL*, Kokkos::HostSpace> rv(&min_ids, 1);
+    KokkosComm::mpi::allreduce(sv, rv, MPI_MIN, MPI_COMM_WORLD);
+  }
 #endif
 
   if (min_ids == 0) {

@@ -52,7 +52,7 @@
 #endif
 
 #ifdef HAVE_MPI
-#include <mpi.h>
+#include <KokkosComm/KokkosComm.hpp>
 #endif
 
 namespace miniFE {
@@ -138,7 +138,7 @@ void write_matrix(const std::string& filename,
       }
     }
 #ifdef HAVE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
+    KokkosComm::mpi::barrier(MPI_COMM_WORLD);
 #endif
   }
 }
@@ -313,7 +313,11 @@ parallel_memory_overhead_MB(const MatrixType& A)
   mem_MB += invMB*A.send_length.size()*sizeof(LocalOrdinal);
 
   double tmp = mem_MB;
-  MPI_Allreduce(&tmp, &mem_MB, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  {
+    Kokkos::View<double*, Kokkos::HostSpace> sv(&tmp, 1);
+    Kokkos::View<double*, Kokkos::HostSpace> rv(&mem_MB, 1);
+    KokkosComm::mpi::allreduce(sv, rv, MPI_SUM, MPI_COMM_WORLD);
+  }
 #endif
 
   return mem_MB;

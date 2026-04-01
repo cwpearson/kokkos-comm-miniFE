@@ -23,6 +23,8 @@ find_package(KokkosKernels REQUIRED)
 
 if(MINIFE_ENABLE_MPI)
   find_package(MPI REQUIRED CXX)
+  find_package(KokkosComm REQUIRED
+    HINTS "${CMAKE_CURRENT_SOURCE_DIR}/_deps/comm-install/lib/cmake/KokkosComm")
 endif()
 
 # --- SOURCE FILES --- #
@@ -56,7 +58,7 @@ target_link_libraries(miniFE.x PRIVATE Kokkos::kokkoskernels)
 
 # MPI
 if(MINIFE_ENABLE_MPI)
-  target_link_libraries(miniFE.x PRIVATE MPI::MPI_CXX)
+  target_link_libraries(miniFE.x PRIVATE MPI::MPI_CXX KokkosComm::KokkosComm)
   target_compile_definitions(miniFE.x PRIVATE HAVE_MPI MPICH_IGNORE_CXX_SEEK USE_MPI_WTIME)
 endif()
 

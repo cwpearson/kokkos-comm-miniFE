@@ -34,7 +34,7 @@
 #include <map>
 
 #ifdef HAVE_MPI
-#include <mpi.h>
+#include <KokkosComm/KokkosComm.hpp>
 #endif
 
 #include <TypeTraits.hpp>
@@ -92,8 +92,11 @@ void get_global_min_max(GlobalOrdinal local_n,
   all_n[myproc] = local_n;
 #ifdef HAVE_MPI
   std::vector<GlobalOrdinal> tmp(all_n);
-  MPI_Datatype mpi_dtype = TypeTraits<GlobalOrdinal>::mpi_type();
-  MPI_Allreduce(&tmp[0], &all_n[0], numprocs, mpi_dtype, MPI_MAX, MPI_COMM_WORLD);
+  {
+    Kokkos::View<GlobalOrdinal*, Kokkos::HostSpace> sv(tmp.data(), numprocs);
+    Kokkos::View<GlobalOrdinal*, Kokkos::HostSpace> rv(all_n.data(), numprocs);
+    KokkosComm::mpi::allreduce(sv, rv, MPI_MAX, MPI_COMM_WORLD);
+  }
 #endif
 
   global_n = 0;

@@ -33,7 +33,7 @@
 #include <iostream>
 
 #ifdef HAVE_MPI
-#include <mpi.h>
+#include <KokkosComm/KokkosComm.hpp>
 #endif
 
 #include <outstream.hpp>
@@ -117,13 +117,15 @@ exchange_externals(MatrixType& A,
 #else
   Scalar* x_external = d_view(x_coefs).data() + local_nrow;
 #endif
-  MPI_Datatype mpi_dtype = TypeTraits<Scalar>::mpi_type();
-
   // Post receives first
   for(int i=0; i<num_neighbors; ++i) {
     int n_recv = recv_length[i];
-    MPI_Irecv(x_external, n_recv, mpi_dtype, neighbors[i], MPI_MY_TAG,
-              MPI_COMM_WORLD, &request[i]);
+#ifndef GPU_MPI
+    Kokkos::View<Scalar*, Kokkos::HostSpace> rv(x_external, n_recv);
+#else
+    Kokkos::View<Scalar*, Kokkos::DefaultExecutionSpace::memory_space> rv(x_external, n_recv);
+#endif
+    KokkosComm::mpi::irecv(rv, neighbors[i], MPI_MY_TAG, MPI_COMM_WORLD, request[i]);
     x_external += n_recv;
   }
 
@@ -165,8 +167,12 @@ exchange_externals(MatrixType& A,
 
   for(int i=0; i<num_neighbors; ++i) {
     int n_send = send_length[i];
-   MPI_Send(s_buffer, n_send, mpi_dtype, neighbors[i], MPI_MY_TAG,
-             MPI_COMM_WORLD);
+#ifndef GPU_MPI
+    Kokkos::View<Scalar*, Kokkos::HostSpace> sv(s_buffer, n_send);
+#else
+    Kokkos::View<Scalar*, Kokkos::DefaultExecutionSpace::memory_space> sv(s_buffer, n_send);
+#endif
+    KokkosComm::mpi::send(sv, neighbors[i], MPI_MY_TAG, MPI_COMM_WORLD);
     s_buffer += n_send;
   }
 
@@ -246,13 +252,11 @@ begin_exchange_externals(MatrixType& A,
   Kokkos::vector<Scalar,Kokkos::DefaultExecutionSpace>& x_coefs = x.coefs;
   Scalar* x_external = &(x_coefs[local_nrow]);
 
-  MPI_Datatype mpi_dtype = TypeTraits<Scalar>::mpi_type();
-
   // Post receives first
   for(int i=0; i<num_neighbors; ++i) {
     int n_recv = recv_length[i];
-    MPI_Irecv(x_external, n_recv, mpi_dtype, neighbors[i], MPI_MY_TAG,
-              MPI_COMM_WORLD, &exch_ext_requests[i]);
+    Kokkos::View<Scalar*, Kokkos::HostSpace> rv(x_external, n_recv);
+    KokkosComm::mpi::irecv(rv, neighbors[i], MPI_MY_TAG, MPI_COMM_WORLD, exch_ext_requests[i]);
     x_external += n_recv;
   }
 
@@ -271,8 +275,8 @@ begin_exchange_externals(MatrixType& A,
 
   for(int i=0; i<num_neighbors; ++i) {
     int n_send = send_length[i];
-    MPI_Send(s_buffer, n_send, mpi_dtype, neighbors[i], MPI_MY_TAG,
-             MPI_COMM_WORLD);
+    Kokkos::View<Scalar*, Kokkos::HostSpace> sv(s_buffer, n_send);
+    KokkosComm::mpi::send(sv, neighbors[i], MPI_MY_TAG, MPI_COMM_WORLD);
     s_buffer += n_send;
   }
 #endif

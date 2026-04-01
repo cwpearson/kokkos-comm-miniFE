@@ -40,7 +40,7 @@
 #include <utils.hpp>
 #include <Kokkos_Vector.hpp>
 #ifdef HAVE_MPI
-#include <mpi.h>
+#include <KokkosComm/KokkosComm.hpp>
 #endif
 
 namespace miniFE {
@@ -165,7 +165,11 @@ generate_matrix_structure(const simple_mesh_description<typename MatrixType::Glo
   }
 #ifdef HAVE_MPI
   int global_throw = 0;
-  MPI_Allreduce(&threw_exc, &global_throw, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  {
+    Kokkos::View<int*, Kokkos::HostSpace> sv(&threw_exc, 1);
+    Kokkos::View<int*, Kokkos::HostSpace> rv(&global_throw, 1);
+    KokkosComm::mpi::allreduce(sv, rv, MPI_SUM, MPI_COMM_WORLD);
+  }
   threw_exc = global_throw;
 #endif
   if (threw_exc) {

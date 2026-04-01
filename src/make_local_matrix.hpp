@@ -32,7 +32,7 @@
 #include <map>
 
 #ifdef HAVE_MPI
-#include <mpi.h>
+#include <KokkosComm/KokkosComm.hpp>
 #endif
 
 namespace miniFE {
@@ -122,9 +122,11 @@ make_local_matrix(MatrixType& A)
   // Note: There might be a better algorithm for doing this, but this
   //       will work...
 
-  MPI_Datatype mpi_dtype = TypeTraits<GlobalOrdinal>::mpi_type();
-  MPI_Allreduce(&tmp_buffer[0], &global_index_offsets[0], numprocs, mpi_dtype,
-                MPI_SUM, MPI_COMM_WORLD);
+  {
+    Kokkos::View<GlobalOrdinal*, Kokkos::HostSpace> sv(&tmp_buffer[0], numprocs);
+    Kokkos::View<GlobalOrdinal*, Kokkos::HostSpace> rv(&global_index_offsets[0], numprocs);
+    KokkosComm::mpi::allreduce(sv, rv, MPI_SUM, MPI_COMM_WORLD);
+  }
 
   // Go through list of externals and find the processor that owns each
   Kokkos::vector<int,Kokkos::DefaultExecutionSpace> external_processor(num_external);
@@ -211,8 +213,11 @@ make_local_matrix(MatrixType& A)
 
   /// sum over all processor all the tmp_neighbors arrays ///
 
-  MPI_Allreduce(&tmp_neighbors[0], &tmp_buffer[0], numprocs, mpi_dtype,
-                MPI_SUM, MPI_COMM_WORLD);
+  {
+    Kokkos::View<GlobalOrdinal*, Kokkos::HostSpace> sv(&tmp_neighbors[0], numprocs);
+    Kokkos::View<GlobalOrdinal*, Kokkos::HostSpace> rv(&tmp_buffer[0], numprocs);
+    KokkosComm::mpi::allreduce(sv, rv, MPI_SUM, MPI_COMM_WORLD);
+  }
 
   // decode the combined 'tmp_neighbors' (stored in tmp_buffer)
   // array from all the processors
@@ -254,15 +259,15 @@ make_local_matrix(MatrixType& A)
   int MPI_MY_TAG = 99;
   std::vector<MPI_Request> request(num_send_neighbors);
   for(int i=0; i<num_send_neighbors; ++i) {
-    MPI_Irecv(&tmp_buffer[i], 1, mpi_dtype, MPI_ANY_SOURCE, MPI_MY_TAG,
-              MPI_COMM_WORLD, &request[i]);
+    Kokkos::View<GlobalOrdinal*, Kokkos::HostSpace> rv(&tmp_buffer[i], 1);
+    KokkosComm::mpi::irecv(rv, MPI_ANY_SOURCE, MPI_MY_TAG, MPI_COMM_WORLD, request[i]);
   }
 
   // send messages
 
   for(int i=0; i<num_recv_neighbors; ++i) {
-    MPI_Send(&tmp_buffer[i], 1, mpi_dtype, recv_list[i], MPI_MY_TAG,
-             MPI_COMM_WORLD);
+    Kokkos::View<GlobalOrdinal*, Kokkos::HostSpace> sv(&tmp_buffer[i], 1);
+    KokkosComm::mpi::send(sv, recv_list[i], MPI_MY_TAG, MPI_COMM_WORLD);
   }
 
   ///
@@ -328,8 +333,8 @@ make_local_matrix(MatrixType& A)
 
   for(int i=0; i<num_recv_neighbors; ++i) {
     int partner = recv_list[i];
-    MPI_Irecv(&lengths[i], 1, MPI_INT, partner, MPI_MY_TAG, MPI_COMM_WORLD,
-              &request[i]);
+    Kokkos::View<int*, Kokkos::HostSpace> rv(&lengths[i], 1);
+    KokkosComm::mpi::irecv(rv, partner, MPI_MY_TAG, MPI_COMM_WORLD, request[i]);
   }
 
   Kokkos::vector<int,Kokkos::DefaultExecutionSpace>& neighbors = A.neighbors;
@@ -360,7 +365,10 @@ make_local_matrix(MatrixType& A)
     neighbors[i] = recv_list[i];
 
     length = j - start;
-    MPI_Send(&length, 1, MPI_INT, recv_list[i], MPI_MY_TAG, MPI_COMM_WORLD);
+    {
+      Kokkos::View<int*, Kokkos::HostSpace> sv(&length, 1);
+      KokkosComm::mpi::send(sv, recv_list[i], MPI_MY_TAG, MPI_COMM_WORLD);
+    }
   }
 
   // Complete the receives of the number of externals
@@ -382,8 +390,8 @@ make_local_matrix(MatrixType& A)
 
   j = 0;
   for(int i=0; i<num_recv_neighbors; ++i) {
-    MPI_Irecv(&A.elements_to_send[j], send_length[i], mpi_dtype, neighbors[i],
-              MPI_MY_TAG, MPI_COMM_WORLD, &request[i]);
+    Kokkos::View<GlobalOrdinal*, Kokkos::HostSpace> rv(&A.elements_to_send[j], send_length[i]);
+    KokkosComm::mpi::irecv(rv, neighbors[i], MPI_MY_TAG, MPI_COMM_WORLD, request[i]);
     j += send_length[i];
   }
 
@@ -402,8 +410,10 @@ make_local_matrix(MatrixType& A)
       ++j;
       if (j == num_external) break;
     }
-   MPI_Send(&new_external[start], j-start, mpi_dtype, recv_list[i],
-             MPI_MY_TAG, MPI_COMM_WORLD);
+    {
+      Kokkos::View<GlobalOrdinal*, Kokkos::HostSpace> sv(&new_external[start], j-start);
+      KokkosComm::mpi::send(sv, recv_list[i], MPI_MY_TAG, MPI_COMM_WORLD);
+    }
   }
 
   // receive from each neighbor the global index list of external elements

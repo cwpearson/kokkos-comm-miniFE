@@ -39,7 +39,7 @@
 #include <utils.hpp>
 
 #ifdef HAVE_MPI
-#include <mpi.h>
+#include <KokkosComm/KokkosComm.hpp>
 #endif
 
 namespace miniFE {
@@ -152,7 +152,9 @@ std::cout<<"("<<x<<","<<y<<","<<z<<") row "<<rows[i]<<": computed: "<<computed_s
   Scalar local_max_err = max_error.err;
   Scalar global_max_err = 0;
 #ifdef HAVE_MPI
-  MPI_Allreduce(&local_max_err, &global_max_err, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+  Kokkos::View<Scalar*, Kokkos::HostSpace> sv(&local_max_err, 1);
+  Kokkos::View<Scalar*, Kokkos::HostSpace> rv(&global_max_err, 1);
+  KokkosComm::mpi::allreduce(sv, rv, MPI_MAX, MPI_COMM_WORLD);
 #else
   global_max_err = local_max_err;
 #endif

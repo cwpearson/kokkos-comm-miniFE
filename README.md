@@ -6,7 +6,7 @@ This is a modified version of mantevo/miniFE from SHA abe328816d84afc319c482d6bc
 
 ### Building the Kokkos implementation
 
-Kokkos and Kokkos Kernels must be installed before building miniFE.
+Kokkos, Kokkos Kernels, and Kokkos Comm must be installed before building miniFE.
 
 **1. Install Kokkos**
 
@@ -34,12 +34,23 @@ cmake --build _deps/kernels-build --parallel 2
 cmake --install _deps/kernels-build
 ```
 
-**3. Configure and build MiniFE**
+**3. Install Kokkos Comm**
+```bash
+git clone --depth=1 https://github.com/kokkos/kokkos-comm.git _deps/comm-src
+cmake -S _deps/comm-src -B _deps/comm-build \
+  -DKokkos_ROOT=$PWD/_deps/kokkos-install \
+  -DCMAKE_INSTALL_PREFIX=$PWD/_deps/comm-install \
+  -DCMAKE_BUILD_TYPE=Release
+cmake --build _deps/comm-build --parallel 2
+cmake --install _deps/comm-build
+```
 
+**4. Configure and build MiniFE**
 ```bash
 cmake -S . -B build \
   -DKokkos_ROOT=$PWD/_deps/kokkos-install \
   -DKokkosKernels_ROOT=$PWD/_deps/kernels-install \
+  -DKokkosComm_ROOT=$PWD/_deps/comm-install \
   -DCMAKE_CXX_COMPILER=mpicxx \
   -DCMAKE_BUILD_TYPE=Release
 cmake --build build
