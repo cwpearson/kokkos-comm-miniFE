@@ -109,7 +109,7 @@ void broadcast_parameters(Parameters& params)
 
   float fparams[1] = {params.load_imbalance};
   {
-    Kokkos::View<float*, Kokkos::HostSpace> fview(fparams, 1);
+    Kokkos::View<float, Kokkos::HostSpace> fview(&fparams[0]);
     KokkosComm::mpi::broadcast(fview, 0, MPI_COMM_WORLD);
   }
   params.load_imbalance = fparams[0];

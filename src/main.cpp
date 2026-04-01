@@ -112,8 +112,8 @@ int main(int argc, char** argv) {
 
 #ifdef HAVE_MPI
   {
-    Kokkos::View<MINIFE_GLOBAL_ORDINAL*, Kokkos::HostSpace> sv(&num_my_ids, 1);
-    Kokkos::View<MINIFE_GLOBAL_ORDINAL*, Kokkos::HostSpace> rv(&min_ids, 1);
+    Kokkos::View<MINIFE_GLOBAL_ORDINAL, Kokkos::HostSpace> sv(&num_my_ids);
+    Kokkos::View<MINIFE_GLOBAL_ORDINAL, Kokkos::HostSpace> rv(&min_ids);
     KokkosComm::mpi::allreduce(sv, rv, MPI_MIN, MPI_COMM_WORLD);
   }
 #endif

@@ -152,8 +152,8 @@ std::cout<<"("<<x<<","<<y<<","<<z<<") row "<<rows[i]<<": computed: "<<computed_s
   Scalar local_max_err = max_error.err;
   Scalar global_max_err = 0;
 #ifdef HAVE_MPI
-  Kokkos::View<Scalar*, Kokkos::HostSpace> sv(&local_max_err, 1);
-  Kokkos::View<Scalar*, Kokkos::HostSpace> rv(&global_max_err, 1);
+  Kokkos::View<Scalar, Kokkos::HostSpace> sv(&local_max_err);
+  Kokkos::View<Scalar, Kokkos::HostSpace> rv(&global_max_err);
   KokkosComm::mpi::allreduce(sv, rv, MPI_MAX, MPI_COMM_WORLD);
 #else
   global_max_err = local_max_err;

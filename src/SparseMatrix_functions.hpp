@@ -314,8 +314,8 @@ parallel_memory_overhead_MB(const MatrixType& A)
 
   double tmp = mem_MB;
   {
-    Kokkos::View<double*, Kokkos::HostSpace> sv(&tmp, 1);
-    Kokkos::View<double*, Kokkos::HostSpace> rv(&mem_MB, 1);
+    Kokkos::View<double, Kokkos::HostSpace> sv(&tmp);
+    Kokkos::View<double, Kokkos::HostSpace> rv(&mem_MB);
     KokkosComm::mpi::allreduce(sv, rv, MPI_SUM, MPI_COMM_WORLD);
   }
 #endif

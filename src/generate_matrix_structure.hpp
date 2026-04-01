@@ -166,8 +166,8 @@ generate_matrix_structure(const simple_mesh_description<typename MatrixType::Glo
 #ifdef HAVE_MPI
   int global_throw = 0;
   {
-    Kokkos::View<int*, Kokkos::HostSpace> sv(&threw_exc, 1);
-    Kokkos::View<int*, Kokkos::HostSpace> rv(&global_throw, 1);
+    Kokkos::View<int, Kokkos::HostSpace> sv(&threw_exc);
+    Kokkos::View<int, Kokkos::HostSpace> rv(&global_throw);
     KokkosComm::mpi::allreduce(sv, rv, MPI_SUM, MPI_COMM_WORLD);
   }
   threw_exc = global_throw;

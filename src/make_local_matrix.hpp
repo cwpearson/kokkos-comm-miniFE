@@ -259,14 +259,14 @@ make_local_matrix(MatrixType& A)
   int MPI_MY_TAG = 99;
   std::vector<MPI_Request> request(num_send_neighbors);
   for(int i=0; i<num_send_neighbors; ++i) {
-    Kokkos::View<GlobalOrdinal*, Kokkos::HostSpace> rv(&tmp_buffer[i], 1);
+    Kokkos::View<GlobalOrdinal, Kokkos::HostSpace> rv(&tmp_buffer[i]);
     KokkosComm::mpi::irecv(rv, MPI_ANY_SOURCE, MPI_MY_TAG, MPI_COMM_WORLD, request[i]);
   }
 
   // send messages
 
   for(int i=0; i<num_recv_neighbors; ++i) {
-    Kokkos::View<GlobalOrdinal*, Kokkos::HostSpace> sv(&tmp_buffer[i], 1);
+    Kokkos::View<GlobalOrdinal, Kokkos::HostSpace> sv(&tmp_buffer[i]);
     KokkosComm::mpi::send(sv, recv_list[i], MPI_MY_TAG, MPI_COMM_WORLD);
   }
 
@@ -333,7 +333,7 @@ make_local_matrix(MatrixType& A)
 
   for(int i=0; i<num_recv_neighbors; ++i) {
     int partner = recv_list[i];
-    Kokkos::View<int*, Kokkos::HostSpace> rv(&lengths[i], 1);
+    Kokkos::View<int, Kokkos::HostSpace> rv(&lengths[i]);
     KokkosComm::mpi::irecv(rv, partner, MPI_MY_TAG, MPI_COMM_WORLD, request[i]);
   }
 
@@ -366,7 +366,7 @@ make_local_matrix(MatrixType& A)
 
     length = j - start;
     {
-      Kokkos::View<int*, Kokkos::HostSpace> sv(&length, 1);
+      Kokkos::View<int, Kokkos::HostSpace> sv(&length);
       KokkosComm::mpi::send(sv, recv_list[i], MPI_MY_TAG, MPI_COMM_WORLD);
     }
   }

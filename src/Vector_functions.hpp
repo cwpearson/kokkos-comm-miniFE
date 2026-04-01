@@ -180,8 +180,8 @@ typename TypeTraits<typename Vector::ScalarType>::magnitude_type
 
 #ifdef HAVE_MPI
   magnitude local_dot = result, global_dot = 0;
-  Kokkos::View<magnitude*, Kokkos::HostSpace> sv(&local_dot, 1);
-  Kokkos::View<magnitude*, Kokkos::HostSpace> rv(&global_dot, 1);
+  Kokkos::View<magnitude, Kokkos::HostSpace> sv(&local_dot);
+  Kokkos::View<magnitude, Kokkos::HostSpace> rv(&global_dot);
   KokkosComm::mpi::allreduce(sv, rv, MPI_SUM, MPI_COMM_WORLD);
   return global_dot;
 #else
