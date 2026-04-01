@@ -11,6 +11,7 @@ option(MINIFE_ENABLE_MPI     "Build with MPI support"               ON)
 option(MINIFE_USE_CSR_MATRIX "Use CSR matrix format (OFF = ELL)"    ON)
 option(MINIFE_INFO           "Embed build info at compile time"      ON)
 option(MINIFE_KERNELS        "Enable per-kernel timing"              OFF)
+option(MINIFE_DEBUG          "Write matrix/vector files for testing" OFF)
 
 set(MINIFE_SCALAR         "double" CACHE STRING "Scalar type (double or float)")
 set(MINIFE_LOCAL_ORDINAL  "int"    CACHE STRING "Local ordinal type")
@@ -100,6 +101,10 @@ if(MINIFE_KERNELS)
   target_compile_definitions(miniFE.x PRIVATE MINIFE_KERNELS=1)
 else()
   target_compile_definitions(miniFE.x PRIVATE MINIFE_KERNELS=0)
+endif()
+
+if(MINIFE_DEBUG)
+  target_compile_definitions(miniFE.x PRIVATE MINIFE_DEBUG)
 endif()
 
 target_compile_options(miniFE.x PRIVATE -O3 -fPIC)
